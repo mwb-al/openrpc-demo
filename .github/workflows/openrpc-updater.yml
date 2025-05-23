@@ -1,0 +1,86 @@
+name: OpenRPC JSON Updater
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name for the PR'
+        required: true
+        default: 'openrpc-update'
+
+jobs:
+  update-openrpc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: 'main'
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'scripts/openrpc-json-updater/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd scripts/openrpc-json-updater
+          npm install
+
+      - name: Generate comparison report
+        id: generate-report
+        run: |
+          cd scripts/openrpc-json-updater
+          REPORT_OUTPUT=$(node cli.js)
+          echo "REPORT_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "$REPORT_OUTPUT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Perform merge
+        id: merge
+        run: |
+          cd scripts/openrpc-json-updater
+          MERGE_OUTPUT=$(node cli.js --merge)
+          echo "$MERGE_OUTPUT"
+          
+          if [[ "$MERGE_OUTPUT" =~ Merge\ completed\.\ Updated\ file:\ \'([^\']+)\'\. ]]; then
+            echo "Successfully updated modified-openrpc.json"
+            
+            echo "MERGE_FILE=modified-openrpc.json" >> $GITHUB_ENV
+            echo "MERGE_FILENAME=modified-openrpc.json" >> $GITHUB_ENV
+          else
+            echo "Failed to update file. Output was: $MERGE_OUTPUT"
+            exit 1
+          fi
+
+      - name: Generate unique branch name
+        id: branch-name
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          UNIQUE_BRANCH="${{ github.event.inputs.branch_name }}-${TIMESTAMP}"
+          echo "UNIQUE_BRANCH=${UNIQUE_BRANCH}" >> $GITHUB_ENV
+          echo "Generated unique branch name: ${UNIQUE_BRANCH}"
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          commit-message: Update OpenRPC JSON
+          title: 'Update OpenRPC JSON'
+          body: |
+            # OpenRPC JSON Update
+      
+            This PR updates the OpenRPC JSON file with the latest changes.
+      
+            ## Comparison Report
+            ```
+            ${{ env.REPORT_OUTPUT }}
+            ```
+          branch: ${{ env.UNIQUE_BRANCH }}
+          base: 'main'
+          add-paths: |
+            scripts/openrpc-json-updater/modified-openrpc.json
+          delete-branch: false
