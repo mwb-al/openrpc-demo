@@ -11,20 +11,10 @@ const modifiedJson = readJson(modifiedFilePath);
 
 function parseArgs() {
   const argv = process.argv.slice(2);
-  const result = { methodArg: undefined, keyArg: undefined, mergeFlag: false };
+  const result = { mergeFlag: false };
 
   for (let i = 0; i < argv.length; i++) {
     switch (argv[i]) {
-      case '-m':
-      case '--method':
-        result.methodArg = argv[i + 1];
-        i++;
-        break;
-      case '-k':
-      case '--key':
-        result.keyArg = argv[i + 1];
-        i++;
-        break;
       case '-g':
       case '--merge':
         result.mergeFlag = true;
@@ -35,20 +25,17 @@ function parseArgs() {
 }
 
 (async () => {
-  const { mergeFlag, methodArg, keyArg } = parseArgs();
+  const { mergeFlag } = parseArgs();
 
   if (mergeFlag) {
     const merged = mergeDocuments(originalJson, modifiedJson);
-    
+
     fs.writeFileSync(modifiedFilePath, JSON.stringify(merged, null, 2), 'utf-8');
     console.log(`\n Merge completed. Updated file: '${modifiedFilePath}'.\n`);
     return;
   }
 
-  await generateReport(originalJson, modifiedJson, {
-    methodArg,
-    keyArg,
-  }).catch((err) => {
+  await generateReport(originalJson, modifiedJson).catch((err) => {
     console.error('Unexpected error while generating report:', err);
     process.exit(1);
   });
