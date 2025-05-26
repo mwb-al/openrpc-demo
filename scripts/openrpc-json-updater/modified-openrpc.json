@@ -57,9 +57,12 @@
         "name": "Accounts",
         "description": "Always returns an empty array",
         "schema": {
-          "title": "empty array",
+          "title": "Accounts",
           "type": "array",
-          "pattern": "^\\[\\s*\\]$"
+          "pattern": "^\\[\\s*\\]$",
+          "items": {
+            "$ref": "#/components/schemas/address"
+          }
         }
       }
     },
@@ -77,21 +80,21 @@
     },
     {
       "name": "eth_call",
-      "summary": "Executes a new message call immediately without creating a transaction on the block chain. ",
+      "summary": "Executes a new message call immediately without creating a transaction on the block chain.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [
         {
           "name": "Transaction",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/TransactionWithSender"
+            "$ref": "#/components/schemas/GenericTransaction"
           }
         },
         {
           "name": "Block",
           "required": false,
           "schema": {
-            "$ref": "#/components/schemas/BlockNumberOrTag"
+            "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
           }
         }
       ],
@@ -116,18 +119,27 @@
     },
     {
       "name": "eth_coinbase",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
+      "summary": "Returns the client coinbase address.",
       "params": [],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Coinbase address",
+        "schema": {
+          "$ref": "#/components/schemas/address"
+        }
       }
     },
     {
       "name": "eth_blobBaseFee",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
+      "summary": "Returns the base fee per blob gas in wei.",
       "params": [],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Blob gas base fee",
+        "schema": {
+          "title": "Blob gas base fee",
+          "$ref": "#/components/schemas/uint"
+        }
       }
     },
     {
@@ -139,7 +151,7 @@
           "name": "Transaction",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/TransactionWithSender"
+            "$ref": "#/components/schemas/GenericTransaction"
           }
         },
         {
@@ -159,8 +171,8 @@
     },
     {
       "name": "eth_feeHistory",
-      "summary": "Returns transaction base fee per gas and effective priority fee per gas for the requested/supported block range.",
-      "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
+      "summary": "Transaction fee history",
+      "description": "Returns transaction base fee per gas and effective priority fee per gas for the requested/supported block range.",
       "params": [
         {
           "name": "blockCount",
@@ -180,7 +192,7 @@
         },
         {
           "name": "rewardPercentiles",
-          "description": "A monotonically increasing list of percentile values. For each block in the requested range, the transactions will be sorted in ascending order by effective tip per gas and the coresponding effective tip for the percentile will be determined, accounting for gas consumed.",
+          "description": "A monotonically increasing list of percentile values. For each block in the requested range, the transactions will be sorted in ascending order by effective tip per gas and the corresponding effective tip for the percentile will be determined, accounting for gas consumed.",
           "required": true,
           "schema": {
             "title": "rewardPercentiles",
@@ -195,7 +207,7 @@
         }
       ],
       "result": {
-        "name": "feeHistoryResult",
+        "name": "Fee history result",
         "description": "Fee history for the returned block range. This can be a subsection of the requested range if not all blocks are available.",
         "schema": {
           "title": "feeHistoryResults",
@@ -210,24 +222,25 @@
             },
             "gasUsedRatio": {
               "title": "gasUsedRatio",
-              "description": "An array of gas used ratio.",
+              "description": "An array of block gas used ratios. These are calculated as the ratio of gasUsed and gasLimit.",
               "type": "array",
               "items": {
                 "title": "floating point number",
                 "type": "number",
-                "pattern": "^([0-9].[0-9]*|0)$"
+                "pattern": "^([0-9].[0-9]*|0)$",
+                "$ref": "#/components/schemas/ratio"
               }
             },
             "baseFeePerGas": {
-              "title": "baseFeePerGas",
-              "description": "An array of block base fees per gas. This includes the next block after the newest of the returned range.",
+              "title": "baseFeePerGasArray",
+              "description": "An array of block base fees per gas. This includes the next block after the newest of the returned range, because this value can be derived from the newest block. Zeroes are returned for pre-EIP-1559 blocks.",
               "type": "array",
               "items": {
                 "$ref": "#/components/schemas/uint"
               }
             },
             "reward": {
-              "title": "reward",
+              "title": "rewardArray",
               "description": "A two-dimensional array of effective priority fees per gas at the requested block percentiles.",
               "type": "array",
               "items": {
@@ -241,13 +254,14 @@
                 }
               }
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     },
     {
       "name": "eth_gasPrice",
-      "summary": "Returns the current price per gas in weibars.",
+      "summary": "Returns the current price per gas in wei.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [],
       "result": {
@@ -272,9 +286,9 @@
         },
         {
           "name": "Block",
-          "required": false,
+          "required": true,
           "schema": {
-            "$ref": "#/components/schemas/BlockNumberOrTag"
+            "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
           }
         }
       ],
@@ -310,7 +324,15 @@
       "result": {
         "name": "Block information",
         "schema": {
-          "$ref": "#/components/schemas/Block"
+          "$ref": "#/components/schemas/Block",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "$ref": "#/components/schemas/Block"
+            }
+          ]
         }
       }
     },
@@ -338,7 +360,15 @@
       "result": {
         "name": "Block information",
         "schema": {
-          "$ref": "#/components/schemas/Block"
+          "$ref": "#/components/schemas/Block",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "$ref": "#/components/schemas/Block"
+            }
+          ]
         }
       }
     },
@@ -355,9 +385,18 @@
         }
       ],
       "result": {
-        "name": "Transactions count",
+        "name": "Transaction count",
         "schema": {
-          "$ref": "#/components/schemas/uint"
+          "$ref": "#/components/schemas/uint",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "title": "Transaction count",
+              "$ref": "#/components/schemas/uint"
+            }
+          ]
         }
       }
     },
@@ -374,9 +413,18 @@
         }
       ],
       "result": {
-        "name": "Transactions count",
+        "name": "Transaction count",
         "schema": {
-          "$ref": "#/components/schemas/uint"
+          "$ref": "#/components/schemas/uint",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "title": "Transaction count",
+              "$ref": "#/components/schemas/uint"
+            }
+          ]
         }
       }
     },
@@ -394,9 +442,9 @@
         },
         {
           "name": "Block",
-          "required": false,
+          "required": true,
           "schema": {
-            "$ref": "#/components/schemas/BlockNumberOrTag"
+            "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
           }
         }
       ],
@@ -409,7 +457,7 @@
     },
     {
       "name": "eth_getLogs",
-      "summary": "Returns an array of all logs matching a given filter object.",
+      "summary": "Returns an array of all logs matching the specified filter.",
       "description": "The block range filter, _i.e._, `fromBlock` and `toBlock` arguments, cannot be larger than `ETH_GET_LOGS_BLOCK_RANGE_LIMIT` (defaults to `1000`). However, when `address` represents a single address, either a `string` or an array with a single element, this restriction is lifted. In any case, if the `topics` param is present the block range must be within ~`302,400` blocks, the equivalent to 7 days.\n\nWhen the logs for an individual address exceeds `MIRROR_NODE_CONTRACT_RESULTS_LOGS_PG_MAX * MIRROR_NODE_LIMIT_PARAM` (defaults to `20k`) an error `-32011` _Mirror Node pagination count range too large_ is returned. These settings are the Mirror Node page limit (defaults to `200`) and Mirror Node entries per page (defaults to `100`) respectively. ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [
         {
@@ -428,7 +476,7 @@
     },
     {
       "name": "eth_getStorageAt",
-      "summary": "Returns the value from a storage position at a given address and block. The optional block param may be latest or a valid tag of a historical block.",
+      "summary": "Returns the value from a storage position at a given address.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [
         {
@@ -439,24 +487,24 @@
           }
         },
         {
-          "name": "Position",
+          "name": "Storage slot",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/uint"
+            "$ref": "#/components/schemas/bytesMax32"
           }
         },
         {
           "name": "Block",
-          "required": false,
+          "required": true,
           "schema": {
             "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
           }
         }
       ],
       "result": {
-        "name": "Value from storage",
+        "name": "Value",
         "schema": {
-          "$ref": "#/components/schemas/hash32"
+          "$ref": "#/components/schemas/bytes"
         }
       }
     },
@@ -483,7 +531,15 @@
       "result": {
         "name": "Transaction information",
         "schema": {
-          "$ref": "#/components/schemas/TransactionInfo"
+          "$ref": "#/components/schemas/TransactionInfo",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "$ref": "#/components/schemas/TransactionInfo"
+            }
+          ]
         }
       }
     },
@@ -510,7 +566,15 @@
       "result": {
         "name": "Transaction information",
         "schema": {
-          "$ref": "#/components/schemas/TransactionInfo"
+          "$ref": "#/components/schemas/TransactionInfo",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "$ref": "#/components/schemas/TransactionInfo"
+            }
+          ]
         }
       }
     },
@@ -530,13 +594,21 @@
       "result": {
         "name": "Transaction information",
         "schema": {
-          "$ref": "#/components/schemas/TransactionInfo"
+          "$ref": "#/components/schemas/TransactionInfo",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "$ref": "#/components/schemas/TransactionInfo"
+            }
+          ]
         }
       }
     },
     {
       "name": "eth_getTransactionCount",
-      "summary": "Returns the number of transactions sent from an address.",
+      "summary": "Returns the nonce of an account in the state. NOTE: The name eth_getTransactionCount reflects the historical fact that an account's nonce and sent transaction count were the same. After the Pectra fork, with the inclusion of EIP-7702, this is no longer true.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [
         {
@@ -548,14 +620,14 @@
         },
         {
           "name": "Block",
-          "required": false,
+          "required": true,
           "schema": {
-            "$ref": "#/components/schemas/BlockNumberOrTag"
+            "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
           }
         }
       ],
       "result": {
-        "name": "Transaction count",
+        "name": "Account nonce",
         "schema": {
           "title": "Transaction count",
           "$ref": "#/components/schemas/uint"
@@ -575,9 +647,17 @@
         }
       ],
       "result": {
-        "name": "Receipt Information",
+        "name": "Receipt information",
         "schema": {
-          "$ref": "#/components/schemas/ReceiptInfo"
+          "$ref": "#/components/schemas/ReceiptInfo",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "$ref": "#/components/schemas/ReceiptInfo"
+            }
+          ]
         }
       }
     },
@@ -611,14 +691,30 @@
       "name": "eth_getUncleCountByBlockHash",
       "summary": "Returns the number of uncles in a block from a block matching the given block hash.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
-      "params": [],
+      "params": [
+        {
+          "name": "Block hash",
+          "schema": {
+            "$ref": "#/components/schemas/hash32"
+          }
+        }
+      ],
       "result": {
-        "name": "eth_getUncleCountByBlockHash result",
+        "name": "Uncle count",
         "schema": {
           "description": "Always returns '0x0'. There are no uncles in Hedera.",
           "title": "hex encoded unsigned integer",
           "type": "string",
-          "pattern": "0x0"
+          "pattern": "0x0",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "title": "Uncle count",
+              "$ref": "#/components/schemas/uint"
+            }
+          ]
         }
       }
     },
@@ -626,14 +722,30 @@
       "name": "eth_getUncleCountByBlockNumber",
       "summary": "Returns the number of transactions in a block matching the given block number.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
-      "params": [],
+      "params": [
+        {
+          "name": "Block",
+          "schema": {
+            "$ref": "#/components/schemas/BlockNumberOrTag"
+          }
+        }
+      ],
       "result": {
-        "name": "eth_getUncleCountByBlockNumber result",
+        "name": "Uncle count",
         "schema": {
           "description": "Always returns '0x0'. There are no uncles in Hedera.",
           "title": "hex encoded unsigned integer",
           "type": "string",
-          "pattern": "0x0"
+          "pattern": "0x0",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "title": "Uncle count",
+              "$ref": "#/components/schemas/uint"
+            }
+          ]
         }
       }
     },
@@ -661,16 +773,17 @@
     },
     {
       "name": "eth_maxPriorityFeePerGas",
-      "summary": "Returns a fee per gas that is an estimate of how much you can pay as a priority fee, or 'tip', to get a transaction included in the current block.",
+      "summary": "Returns the current maxPriorityFeePerGas per gas in wei.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [],
       "result": {
-        "name": "eth_maxPriorityFeePerGas result",
+        "name": "Max priority fee per gas",
         "schema": {
           "description": "Always returns '0x0'. Hedera doesn't have a concept of tipping nodes to promote any behavior",
-          "title": "hex encoded unsigned integer",
+          "title": "Max priority fee per gas",
           "type": "string",
-          "pattern": "0x0"
+          "pattern": "0x0",
+          "$ref": "#/components/schemas/uint"
         }
       }
     },
@@ -689,13 +802,13 @@
     },
     {
       "name": "eth_newBlockFilter",
-      "summary": "Creates a filter object, to notify of newly created blocks.",
+      "summary": "Creates a filter in the node, to notify when a new block arrives.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
       "params": [],
       "result": {
-        "name": "Filter ID",
+        "name": "Filter identifier",
         "schema": {
-          "$ref": "#/components/schemas/hash16"
+          "$ref": "#/components/schemas/uint"
         }
       },
       "tags": [
@@ -710,16 +823,16 @@
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [
         {
-          "name": "LogFilter",
+          "name": "Filter",
           "schema": {
-            "$ref": "#/components/schemas/LogFilter"
+            "$ref": "#/components/schemas/Filter"
           }
         }
       ],
       "result": {
-        "name": "Filter ID",
+        "name": "Filter identifier",
         "schema": {
-          "$ref": "#/components/schemas/hash16"
+          "$ref": "#/components/schemas/uint"
         }
       },
       "tags": [
@@ -734,14 +847,14 @@
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
       "params": [
         {
-          "name": "FilterID",
+          "name": "Filter identifier",
           "schema": {
-            "$ref": "#/components/schemas/hash16"
+            "$ref": "#/components/schemas/uint"
           }
         }
       ],
       "result": {
-        "name": "Uninstall status",
+        "name": "Success",
         "schema": {
           "type": "boolean"
         }
@@ -754,10 +867,14 @@
     },
     {
       "name": "eth_newPendingTransactionFilter",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
+      "summary": "Creates a filter in the node, to notify when new pending transactions arrive.",
       "params": [],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Filter identifier",
+        "schema": {
+          "$ref": "#/components/schemas/uint"
+        }
       },
       "tags": [
         {
@@ -767,18 +884,18 @@
     },
     {
       "name": "eth_getFilterLogs",
-      "summary": "Returns an array of all logs matching filter with given id.",
+      "summary": "Returns an array of all logs matching the filter with the given ID (created using `eth_newFilter`).",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
       "params": [
         {
-          "name": "Filter ID",
+          "name": "Filter identifier",
           "schema": {
-            "$ref": "#/components/schemas/hash16"
+            "$ref": "#/components/schemas/uint"
           }
         }
       ],
       "result": {
-        "name": "Filter result",
+        "name": "Log objects",
         "schema": {
           "$ref": "#/components/schemas/FilterResults"
         }
@@ -791,18 +908,18 @@
     },
     {
       "name": "eth_getFilterChanges",
-      "summary": "Gets the latest results since the last request for a provided filter according to its type.",
+      "summary": "Polling method for the filter with the given ID (created using `eth_newFilter`). Returns an array of logs which occurred since last poll.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
       "params": [
         {
-          "name": "Filter ID",
+          "name": "Filter identifier",
           "schema": {
-            "$ref": "#/components/schemas/hash16"
+            "$ref": "#/components/schemas/uint"
           }
         }
       ],
       "result": {
-        "name": "Filter result",
+        "name": "Log objects",
         "schema": {
           "oneOf": [
             {
@@ -820,7 +937,8 @@
                 "$ref": "#/components/schemas/FilterResults"
               }
             }
-          ]
+          ],
+          "$ref": "#/components/schemas/FilterResults"
         }
       },
       "tags": [
@@ -839,7 +957,7 @@
     },
     {
       "name": "eth_sendRawTransaction",
-      "summary": "Submits a raw transaction.",
+      "summary": "Submits a raw transaction. You can create and sign a transaction externally using a library such as [web3.js](https://web3js.readthedocs.io/) or [ethers.js](https://docs.ethers.org/). For [EIP-4844](https://eips.ethereum.org/EIPS/eip-4844) transactions, the raw form must be the network form. This means it includes the blobs, KZG commitments, and KZG proofs. For [EIP-7594](https://eips.ethereum.org/EIPS/eip-7594) transactions, the raw format must be the network form. This means it includes the blobs, KZG commitments, and cell proofs. The logic for handling the new transaction during fork boundaries are 1. When receiving an encoded transaction with cell proofs before the PeerDAS fork activates, we reject it. Only blob proofs are accepted into the pool. 2. At the time of fork activation, the implementer could (not mandatory) - Drop all old-format transactions - Convert old proofs to new format (computationally expensive) - Convert only when including in a locally produced block 3. After the fork has activated, only txs with cell proofs are accepted via p2p relay. 4. On RPC (eth_sendRawTransaction), txs with blob proofs may still be accepted and will be auto-converted by the node. At implementer discretion, this facility can be deprecated later when users have switched to new client libraries that can create cell proofs.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png) ![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/ws_label.png)",
       "params": [
         {
@@ -859,26 +977,69 @@
     },
     {
       "name": "eth_sendTransaction",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
-      "params": [],
+      "summary": "Signs and submits a transaction.",
+      "params": [
+        {
+          "name": "Transaction",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GenericTransaction"
+          }
+        }
+      ],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Transaction hash",
+        "schema": {
+          "$ref": "#/components/schemas/hash32"
+        }
       }
     },
     {
       "name": "eth_signTransaction",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
-      "params": [],
+      "summary": "Returns an RLP encoded transaction signed by the specified account.",
+      "params": [
+        {
+          "name": "Transaction",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GenericTransaction"
+          }
+        }
+      ],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Encoded transaction",
+        "schema": {
+          "$ref": "#/components/schemas/bytes"
+        }
       }
     },
     {
       "name": "eth_sign",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
-      "params": [],
+      "summary": "Returns an EIP-191 signature over the provided data.",
+      "params": [
+        {
+          "name": "Address",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/address"
+          }
+        },
+        {
+          "name": "Message",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/bytes"
+          }
+        }
+      ],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Signature",
+        "schema": {
+          "$ref": "#/components/schemas/bytes65"
+        }
       }
     },
     {
@@ -905,7 +1066,7 @@
     },
     {
       "name": "eth_syncing",
-      "summary": "Returns syncing status.",
+      "summary": "Returns an object with data about the sync status or false.",
       "description": "![](https://raw.githubusercontent.com/hiero-ledger/hiero-json-rpc-relay/main/docs/images/http_label.png)",
       "params": [],
       "result": {
@@ -913,7 +1074,8 @@
         "schema": {
           "title": "Not syncing",
           "description": "Always returns false.",
-          "type": "boolean"
+          "type": "boolean",
+          "$ref": "#/components/schemas/SyncingStatus"
         }
       }
     },
@@ -1239,10 +1401,112 @@
     },
     {
       "name": "eth_getProof",
-      "summary": "Always returns UNSUPPORTED_METHOD error.",
-      "params": [],
+      "summary": "Returns the merkle proof for a given account and optionally some storage keys.",
+      "params": [
+        {
+          "name": "Address",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/address"
+          }
+        },
+        {
+          "name": "StorageKeys",
+          "required": true,
+          "schema": {
+            "title": "Storage keys",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/bytesMax32"
+            }
+          }
+        },
+        {
+          "name": "Block",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
+          }
+        }
+      ],
       "result": {
-        "$ref": "#/components/schemas/unsupportedError"
+        "$ref": "#/components/schemas/unsupportedError",
+        "name": "Account",
+        "schema": {
+          "$ref": "#/components/schemas/AccountProof"
+        }
+      }
+    },
+    {
+      "name": "eth_createAccessList",
+      "summary": "Generates an access list for a transaction.",
+      "params": [
+        {
+          "name": "Transaction",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GenericTransaction"
+          }
+        },
+        {
+          "name": "Block",
+          "required": false,
+          "schema": {
+            "$ref": "#/components/schemas/BlockNumberOrTag"
+          }
+        }
+      ],
+      "result": {
+        "name": "Gas used",
+        "schema": {
+          "title": "Access list result",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accessList": {
+              "title": "accessList",
+              "$ref": "#/components/schemas/AccessList"
+            },
+            "error": {
+              "title": "error",
+              "type": "string"
+            },
+            "gasUsed": {
+              "title": "Gas used",
+              "$ref": "#/components/schemas/uint"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "eth_getBlockReceipts",
+      "summary": "Returns the receipts of a block by number or hash.",
+      "params": [
+        {
+          "name": "Block",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/BlockNumberOrTagOrHash"
+          }
+        }
+      ],
+      "result": {
+        "name": "Receipts information",
+        "schema": {
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/notFound"
+            },
+            {
+              "title": "Receipts information",
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ReceiptInfo"
+              }
+            }
+          ]
+        }
       }
     }
   ],
