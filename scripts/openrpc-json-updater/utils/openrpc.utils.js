@@ -1,4 +1,4 @@
-import diff from 'deep-diff';
+import { compareIgnoringFormatting } from '../operations/prepare.js';
 
 export function getMethodMap(openrpcDoc) {
   const map = new Map();
@@ -10,13 +10,15 @@ export function getMethodMap(openrpcDoc) {
   return map;
 }
 
-export function getDifferingTopLevelKeys(origMethod, modMethod) {
-  const differences = diff(origMethod, modMethod) || [];
+export function getDifferingKeys(origMethod, modMethod) {
+  const differences = compareIgnoringFormatting(origMethod, modMethod) || [];
   const keys = new Set();
 
   for (const d of differences) {
-    const topKey = d.path?.[0];
-    if (topKey && topKey !== 'name') keys.add(topKey);
+    if (d.path) {
+      const fullPath = d.path.join('.');
+      if (fullPath && !fullPath.startsWith('name')) keys.add(fullPath);
+    }
   }
   return [...keys];
 }

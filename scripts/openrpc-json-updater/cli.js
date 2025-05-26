@@ -1,7 +1,7 @@
-import fs from 'fs';
-import { readJson } from './utils/file.utils.js';
+import { readJson, writeJson } from './utils/file.utils.js';
 import { mergeDocuments } from './operations/merge.js';
 import { generateReport } from './operations/report.js';
+import { prepareDocuments } from './operations/prepare.js';
 
 const originalFilePath = './original-openrpc.json';
 const modifiedFilePath = './modified-openrpc.json';
@@ -26,16 +26,18 @@ function parseArgs() {
 
 (async () => {
   const { mergeFlag } = parseArgs();
+  
+  const { normalizedOriginal, normalizedModified } = prepareDocuments(originalJson, modifiedJson);
 
   if (mergeFlag) {
-    const merged = mergeDocuments(originalJson, modifiedJson);
+    const merged = mergeDocuments(normalizedOriginal, normalizedModified);
 
-    fs.writeFileSync(modifiedFilePath, JSON.stringify(merged, null, 2), 'utf-8');
+    writeJson(modifiedFilePath, merged);
     console.log(`\n Merge completed. Updated file: '${modifiedFilePath}'.\n`);
     return;
   }
 
-  await generateReport(originalJson, modifiedJson).catch((err) => {
+  await generateReport(normalizedOriginal, normalizedModified).catch((err) => {
     console.error('Unexpected error while generating report:', err);
     process.exit(1);
   });

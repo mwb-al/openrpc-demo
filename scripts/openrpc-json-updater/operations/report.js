@@ -1,12 +1,4 @@
-import diff from 'deep-diff';
-import { getMethodMap, getDifferingTopLevelKeys } from '../utils/openrpc.utils.js';
-
-function compareIgnoringFormatting(obj1, obj2) {
-  const normalized1 = JSON.parse(JSON.stringify(obj1));
-  const normalized2 = JSON.parse(JSON.stringify(obj2));
-
-  return diff(normalized1, normalized2);
-}
+import { getMethodMap, getDifferingKeys } from '../utils/openrpc.utils.js';
 
 export async function generateReport(
   originalJson,
@@ -26,7 +18,7 @@ export async function generateReport(
     if (!modifiedMethods.has(name)) continue;
     const modMethod = modifiedMethods.get(name);
 
-    const differingKeys = getDifferingTopLevelKeys(origMethod, modMethod);
+    const differingKeys = getDifferingKeys(origMethod, modMethod);
     if (differingKeys.length > 0) {
       changedMethods.push({
         method: name,

@@ -1,4 +1,4 @@
-import { getMethodMap, getDifferingTopLevelKeys } from '../utils/openrpc.utils.js';
+import { getMethodMap, getDifferingKeys } from '../utils/openrpc.utils.js';
 
 export function mergeDocuments(originalJson, modifiedJson) {
   if (!Array.isArray(originalJson.methods)) return modifiedJson;
@@ -16,7 +16,7 @@ export function mergeDocuments(originalJson, modifiedJson) {
     }
 
     const modMethod = modifiedMap.get(name);
-    const differingKeys = getDifferingTopLevelKeys(origMethod, modMethod);
+    const differingKeys = getDifferingKeys(origMethod, modMethod);
 
     for (const k of differingKeys) {
       modMethod[k] = origMethod[k];
