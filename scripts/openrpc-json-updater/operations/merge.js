@@ -129,6 +129,27 @@ export function mergeDocuments(originalJson, modifiedJson) {
       }
     }
   }
-  
+
+  if (filteredOriginal.components && typeof filteredOriginal.components === 'object') {
+    if (!filteredModified.components) {
+      filteredModified.components = {};
+    }
+
+    for (const section in filteredOriginal.components) {
+      if (!filteredModified.components[section]) {
+        filteredModified.components[section] = {};
+      }
+
+      for (const key in filteredOriginal.components[section]) {
+        if (shouldSkipKey(key)) continue;
+
+        if (!filteredModified.components[section][key]) {
+          filteredModified.components[section][key] =
+              removeSkippedKeys(filteredOriginal.components[section][key]);
+        }
+      }
+    }
+  }
+
   return processDocument(filteredModified);
 }
