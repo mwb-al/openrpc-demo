@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: openrpc
-          path: ./execution-apis/openrpc.json
+          path: ./execution-apis/refs-openrpc.json
 
   update-openrpc:
     runs-on: ubuntu-latest
@@ -59,7 +59,7 @@ jobs:
       - name: Copy generated openrpc.json to scripts directory
         run: |
           mkdir -p scripts/openrpc-json-updater
-          cp ./downloaded-artifacts/openrpc.json scripts/openrpc-json-updater/original-openrpc.json
+          cp ./downloaded-artifacts/refs-openrpc.json scripts/openrpc-json-updater/original-openrpc.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
