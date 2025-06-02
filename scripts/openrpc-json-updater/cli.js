@@ -1,7 +1,7 @@
 import { readJson, writeJson } from './utils/file.utils.js';
 import { mergeDocuments } from './operations/merge.js';
 import { generateReport } from './operations/report.js';
-import { prepareDocuments } from './operations/prepare.js';
+import { prepareDocuments, compareIgnoringFormatting } from './operations/prepare.js';
 
 const originalFilePath = './original-openrpc.json';
 const modifiedFilePath = './modified-openrpc.json';
@@ -24,13 +24,23 @@ function parseArgs() {
   return result;
 }
 
+function hasDifferences(original, merged) {
+  const differences = compareIgnoringFormatting(original, merged);
+  return differences && differences.length > 0;
+}
+
 (async () => {
   const { mergeFlag } = parseArgs();
-  
+
   const { normalizedOriginal, normalizedModified } = prepareDocuments(originalJson, modifiedJson);
 
   if (mergeFlag) {
     const merged = mergeDocuments(normalizedOriginal, normalizedModified);
+
+    if (!hasDifferences(normalizedModified, merged)) {
+      console.log(`\nNo differences found after merge. No changes needed.\n`);
+      process.exit(0);
+    }
 
     writeJson(modifiedFilePath, merged, modifiedContent);
     console.log(`\nMerge completed. Updated file: '${modifiedFilePath}'.\n`);

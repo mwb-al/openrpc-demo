@@ -87,13 +87,23 @@ jobs:
         run: |
           cd scripts/openrpc-json-updater
           MERGE_OUTPUT=$(node cli.js --merge)
+          MERGE_EXIT_CODE=$?
           echo "$MERGE_OUTPUT"
-          
-          if [[ "$MERGE_OUTPUT" =~ Merge\ completed\.\ Updated\ file:\ \'([^\']+)\'\. ]]; then
-            echo "Successfully updated modified-openrpc.json"
-          
-            echo "MERGE_FILE=modified-openrpc.json" >> $GITHUB_ENV
-            echo "MERGE_FILENAME=modified-openrpc.json" >> $GITHUB_ENV
+
+          if [ $MERGE_EXIT_CODE -eq 0 ]; then
+            if [[ "$MERGE_OUTPUT" =~ No\ differences\ found\ after\ merge ]]; then
+              echo "No differences found. Skipping PR creation."
+              echo "SKIP_PR=true" >> $GITHUB_ENV
+              exit 0
+            elif [[ "$MERGE_OUTPUT" =~ Merge\ completed\.\ Updated\ file:\ \'([^\']+)\'\. ]]; then
+              echo "Successfully updated modified-openrpc.json"
+              echo "MERGE_FILE=modified-openrpc.json" >> $GITHUB_ENV
+              echo "MERGE_FILENAME=modified-openrpc.json" >> $GITHUB_ENV
+              echo "SKIP_PR=false" >> $GITHUB_ENV
+            else
+              echo "Unexpected output. Output was: $MERGE_OUTPUT"
+              exit 1
+            fi
           else
             echo "Failed to update file. Output was: $MERGE_OUTPUT"
             exit 1
@@ -108,6 +118,7 @@ jobs:
           echo "Generated unique branch name: ${UNIQUE_BRANCH}"
 
       - name: Create Pull Request
+        if: env.SKIP_PR != 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT_TOKEN }}
