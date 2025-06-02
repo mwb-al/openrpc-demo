@@ -4,6 +4,49 @@ export const SKIPPED_KEYS = [
   "blobGasUsedRatio"
 ];
 
+export const CUSTOM_FIELDS = [
+    "eth_accounts.description",
+    "eth_accounts.result.description",
+    "eth_accounts.result.schema.title",
+
+    "eth_call.summary",
+
+    "eth_coinbase.summary",
+    "eth_blobBaseFee.summary",
+
+    "eth_feeHistory.summary",
+    "eth_feeHistory.description",
+    "eth_feeHistory.params[2].description",
+    "eth_feeHistory.result.name",
+    "eth_feeHistory.result.schema.properties.gasUsedRatio.description",
+    "eth_feeHistory.result.schema.properties.baseFeePerGas.title",
+    "eth_feeHistory.result.schema.properties.baseFeePerGas.description",
+    "eth_feeHistory.result.schema.properties.reward.title",
+
+    "eth_gasPrice.summary",
+
+    "eth_getBalance.result.schema.title",
+
+    "eth_getBlockTransactionCountByHash.result.name",
+    "eth_getBlockTransactionCountByNumber.result.name",
+
+    "eth_getLogs.summary",
+    "eth_getStorageAt.summary",
+    "eth_getStorageAt.params[1].name",
+    "eth_getStorageAt.result.name",
+
+    "eth_getTransactionCount.summary",
+    "eth_getTransactionCount.result.name",
+    "eth_getTransactionCount.result.schema.title",
+
+    "eth_maxPriorityFeePerGas.summary",
+    "eth_maxPriorityFeePerGas.result.schema.description",
+    "eth_maxPriorityFeePerGas.result.schema.title",
+
+    "eth_newBlockFilter.summary",
+    "eth_newBlockFilter.result.name",
+];
+
 export const DISCARDED_METHODS = [
   "engine_*"
 ];
@@ -21,9 +64,14 @@ export const SKIPPED_METHODS = [
   ...NOT_IMPLEMENTED_METHODS
 ];
 
-export function shouldSkipMethod(methodName) {
+export function shouldSkipMethod(methodName, path) {
   if (!methodName) return false;
-  
+
+  if (path) {
+    const fullPath = `${methodName}.${path}`;
+    if (CUSTOM_FIELDS.includes(fullPath)) return true;
+  }
+
   for (const pattern of SKIPPED_METHODS) {
     if (pattern === methodName) return true;
 

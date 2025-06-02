@@ -115,6 +115,9 @@ class MergeDocuments {
     for (const path of differingKeys) {
       if (shouldSkipPath(path)) continue;
 
+      const methodName = origMethod.name;
+      if (shouldSkipMethod(methodName, path)) continue;
+
       const valueFromOriginal = getNestedValue(origMethod, path);
 
       const existsInOriginal = hasNestedPath(origMethod, path);
