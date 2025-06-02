@@ -16,7 +16,7 @@ export const CUSTOM_FIELDS = [
 
     "eth_feeHistory.summary",
     "eth_feeHistory.description",
-    "eth_feeHistory.params[2].description",
+    "eth_feeHistory.params.2.description",
     "eth_feeHistory.result.name",
     "eth_feeHistory.result.schema.properties.gasUsedRatio.description",
     "eth_feeHistory.result.schema.properties.baseFeePerGas.title",
@@ -32,7 +32,7 @@ export const CUSTOM_FIELDS = [
 
     "eth_getLogs.summary",
     "eth_getStorageAt.summary",
-    "eth_getStorageAt.params[1].name",
+    "eth_getStorageAt.params.1.name",
     "eth_getStorageAt.result.name",
 
     "eth_getTransactionCount.summary",
