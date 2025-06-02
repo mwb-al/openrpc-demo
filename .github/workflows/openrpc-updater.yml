@@ -11,7 +11,7 @@ on:
 
 jobs:
   clone-and-build-execution-apis:
-    runs-on: hiero-smart-contracts-linux-medium
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout execution-apis repo
