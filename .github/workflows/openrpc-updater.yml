@@ -2,12 +2,9 @@
 name: OpenRPC JSON Updater
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch_name:
-        description: 'Branch name for the PR'
-        required: true
-        default: 'openrpc-update'
+  push:
+    branches:
+      - main
 
 jobs:
   clone-and-build-execution-apis:
