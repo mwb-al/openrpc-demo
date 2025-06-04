@@ -1,10 +1,12 @@
-import { readJson, writeJson } from './utils/file.utils.js';
+// SPDX-License-Identifier: Apache-2.0
+
 import { mergeDocuments } from './operations/merge.js';
+import { compareIgnoringFormatting, prepareDocuments } from './operations/prepare.js';
 import { generateReport } from './operations/report.js';
-import { prepareDocuments, compareIgnoringFormatting } from './operations/prepare.js';
+import { readJson, writeJson } from './utils/file.utils.js';
 
 const originalFilePath = './original-openrpc.json';
-const modifiedFilePath = './modified-openrpc.json';
+const modifiedFilePath = '../../docs/openrpc.json';
 
 const { data: originalJson } = readJson(originalFilePath);
 const { data: modifiedJson, originalContent: modifiedContent } = readJson(modifiedFilePath);
