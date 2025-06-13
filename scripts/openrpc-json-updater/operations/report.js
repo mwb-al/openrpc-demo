@@ -11,9 +11,6 @@ export async function generateReport(originalJson, modifiedJson) {
   for (const name of originalMethods.keys()) {
     if (!modifiedMethods.has(name)) {
       const category = getSkippedMethodCategory(name);
-      if (category === 'discarded' || category === 'not implemented') {
-        continue;
-      }
       missingMethods.push({
         missingMethod: name,
         status: category ? `${category}` : 'a new method',
@@ -24,6 +21,10 @@ export async function generateReport(originalJson, modifiedJson) {
   const changedMethods = [];
   for (const [name, origMethod] of originalMethods) {
     if (!modifiedMethods.has(name)) continue;
+    const category = getSkippedMethodCategory(name);
+    if (category === 'discarded' || category === 'not implemented') {
+      continue;
+    }
     const modMethod = modifiedMethods.get(name);
 
     const { valueDiscrepancies } = getDifferingKeysByCategory(origMethod, modMethod);
