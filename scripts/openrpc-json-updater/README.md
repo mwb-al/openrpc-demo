@@ -2,6 +2,13 @@
 
 A command-line tool for comparing and merging OpenRPC JSON specifications.
 
+## OpenRPC Files Explanation
+
+The ethereum/execution-apis repository contains two OpenRPC JSON files:
+
+- **openrpc.json**: The standard OpenRPC specification with external references. Used for conformity testing.
+- **refs-openrpc.json**: The same specification but with all references resolved inline. Used for updating our local OpenRPC specification.
+
 ## GitHub Actions Integration
 
 This tool is used with the `openrpc-updater.yml` workflow that automatically:
@@ -69,20 +76,34 @@ node cli.js [options]
 
 Options:
   -g, --merge               merge original -> modified (writes a new dated file)
+  -o, --original <path>     path to the original OpenRPC JSON file (default: ./original-openrpc.json)
+  -m, --modified <path>     path to the modified OpenRPC JSON file (default: ../../docs/openrpc.json)
 ```
 
 ### Examples
 
-Full diff report:
+Full diff report using default file paths:
 
 ```shell script
 node cli.js
 ```
 
-Merge changes:
+Full diff report with custom file paths:
+
+```shell script
+node cli.js --original /path/to/original.json --modified /path/to/modified.json
+```
+
+Merge changes using default file paths:
 
 ```shell script
 node cli.js --merge
+```
+
+Merge changes with custom file paths:
+
+```shell script
+node cli.js --merge --original /path/to/original.json --modified /path/to/modified.json
 ```
 
 ## Important Note

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { shouldSkipKey, getSkippedMethodCategory } from '../config.js';
+import { getSkippedMethodCategory,shouldSkipKey } from '../config.js';
 
 /**
  * Sets a nested value in an object using a dot-notation path

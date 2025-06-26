@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'docs/openrpc.json'
+  workflow_dispatch:
 
 jobs:
   clone-and-build-execution-apis:
@@ -66,15 +67,14 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          cd scripts/openrpc-json-updater
-          npm install
+        working-directory: scripts/openrpc-json-updater
+        run: npm install
 
       - name: Generate comparison report
         id: generate-report
+        working-directory: scripts/openrpc-json-updater
         run: |
-          cd scripts/openrpc-json-updater
-          REPORT_OUTPUT=$(node cli.js)
+          REPORT_OUTPUT=$(node cli.js --original ./original-openrpc.json --modified ../../docs/openrpc.json)
           echo "REPORT_OUTPUT<<EOF" >> $GITHUB_ENV
           echo "$REPORT_OUTPUT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -85,9 +85,9 @@ jobs:
       # This provides a safety mechanism for tracking OpenRPC specification changes over time.
       - name: Perform merge
         id: merge
+        working-directory: scripts/openrpc-json-updater
         run: |
-          cd scripts/openrpc-json-updater
-          MERGE_OUTPUT=$(node cli.js --merge)
+          MERGE_OUTPUT=$(node cli.js --merge --original ./original-openrpc.json --modified ../../docs/openrpc.json)
           MERGE_EXIT_CODE=$?
           echo "$MERGE_OUTPUT"
 
@@ -125,9 +125,9 @@ jobs:
           title: 'Update OpenRPC JSON'
           body: |
             # OpenRPC JSON Update
-            
-            This PR updates the OpenRPC JSON file with the latest changes.
-            
+
+            This PR updates the OpenRPC JSON specification with the latest changes from Ethereum JSON-RPC specification.
+
             ## Comparison Report
             ```
             ${{ env.REPORT_OUTPUT }}
